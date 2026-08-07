@@ -25,14 +25,14 @@ Sources were `.m4a` (AAC), transcoded to 128 kbps MP3 to keep downloads fast ove
 
 ## Hosting
 
-This repo is served via [GitHub Pages](https://pages.github.com/).
+Served via [GitHub Pages](https://pages.github.com/) at **https://can-lizzy-escape.us**, with HTTPS enforced via a Let's Encrypt certificate that GitHub renews automatically.
 
-## Custom domain
+The domain is registered at Cloudflare, which also hosts its DNS. The apex points at GitHub Pages with `A` records (185.199.108–111.153) and `AAAA` records (2606:50c0:8000–8003::153). These must stay **DNS only** (grey cloud) in Cloudflare — proxying them breaks the TLS handshake with GitHub.
 
-To point a custom domain at this site later:
+The old `ari-h-stromberg.github.io/qr-music-page` address still works and 301-redirects here.
 
-1. Add a `CNAME` file to the repo root containing just your domain (e.g. `music.example.com`)
-2. In your DNS provider, add either:
-   - A `CNAME` record for a subdomain pointing to `<username>.github.io`, or
-   - `A` records for an apex domain pointing to GitHub Pages' IPs (185.199.108.153, 185.199.109.153, 185.199.110.153, 185.199.111.153)
-3. In the repo's GitHub Settings → Pages, set the custom domain and enable "Enforce HTTPS" once DNS propagates
+## QR code
+
+`assets/qr-code.png` encodes `HTTPS://CAN-LIZZY-ESCAPE.US`. The uppercase is deliberate: URLs are case-insensitive, and uppercase lets the QR use alphanumeric encoding mode instead of byte mode, which shrinks the grid from 33×33 to 29×29 and makes each printed square proportionally larger and easier to scan.
+
+Open `assets/print.html` and print it for a ready-made 3.5 inch version.
