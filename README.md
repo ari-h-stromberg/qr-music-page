@@ -42,7 +42,9 @@ python3 tools/build-photos.py
 
 That downscales everything to 1200px, strips metadata (including any GPS tags), rewrites `photos/photos.json`, and removes images no longer in the source folder. The current set is 96 photos, down from 444 MB of originals to 15 MB.
 
-The manifest is ordered oldest photo first, using each file's EXIF capture date and falling back to its file timestamp, so the slideshow plays chronologically.
+The manifest is ordered oldest photo first so the slideshow plays chronologically. Ordering uses the EXIF `DateTimeOriginal` tag — when the shutter actually fired — read from the Exif sub-IFD where it lives, falling back to the file timestamp only when a photo carries no EXIF at all.
+
+Note that EXIF tag 306 (`DateTime`) is intentionally ignored. It sits at the top level of the metadata where it is easy to read by mistake, but it records when the file was last written, so edited or exported photos report the edit date instead of the capture date. Over half of this set is affected: the engagement photos were shot 2016-12-26 but exported 2017-01-06.
 
 The page fetches only the next photo in sequence rather than all of them at once, so a phone on cellular isn't asked to download the whole set up front.
 

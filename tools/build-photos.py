@@ -16,20 +16,25 @@ import sys
 
 from PIL import Image, ImageOps
 
-EXIF_DATE_TAGS = (36867, 36868, 306)  # DateTimeOriginal, DateTimeDigitized, DateTime
 EXIF_SUB_IFD = 0x8769
+DATE_TIME_ORIGINAL = 36867   # when the shutter fired
+DATE_TIME_DIGITIZED = 36868  # when it was digitised, same as above for digital cameras
+
+# Tag 306 (DateTime) is deliberately not consulted: it records when the file was
+# last written, so edited or exported photos report the edit date rather than
+# when they were taken.
 
 
 def taken_at(path):
     """When the photo was taken, falling back to the file's timestamp."""
     try:
         exif = Image.open(path).getexif()
-        raw = next((exif.get(t) for t in EXIF_DATE_TAGS if exif.get(t)), None)
-        if not raw:
-            sub = exif.get_ifd(EXIF_SUB_IFD)
-            raw = next((sub.get(t) for t in EXIF_DATE_TAGS if sub.get(t)), None)
-        if raw:
-            return datetime.datetime.strptime(str(raw)[:19], "%Y:%m:%d %H:%M:%S")
+        # These normally live in the Exif sub-IFD, not at the top level.
+        for source in (exif.get_ifd(EXIF_SUB_IFD), exif):
+            for tag in (DATE_TIME_ORIGINAL, DATE_TIME_DIGITIZED):
+                raw = source.get(tag)
+                if raw:
+                    return datetime.datetime.strptime(str(raw)[:19], "%Y:%m:%d %H:%M:%S")
     except Exception:
         pass
     return datetime.datetime.fromtimestamp(os.path.getmtime(path))
