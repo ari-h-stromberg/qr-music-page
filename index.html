@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Now Playing</title>
+<title>Track Picker</title>
 <style>
   :root {
     color-scheme: dark;
@@ -27,20 +27,23 @@
     border: 1px solid rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(16px);
     border-radius: 24px;
-    padding: 32px 28px 28px;
-    text-align: center;
+    padding: 28px 24px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
   }
+  .header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
   .art {
-    width: 180px;
-    height: 180px;
-    margin: 0 auto 24px;
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 16px;
     border-radius: 20px;
     background: linear-gradient(135deg, #ff6ec4, #7873f5 50%, #4adede);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 64px;
+    font-size: 40px;
     box-shadow: 0 12px 30px rgba(120, 115, 245, 0.4);
     animation: spin 12s linear infinite paused;
   }
@@ -55,16 +58,70 @@
     font-weight: 600;
   }
   p.subtitle {
-    margin: 0 0 24px;
+    margin: 0;
     color: rgba(245, 245, 247, 0.6);
     font-size: 14px;
+  }
+  .track-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .track {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    text-align: left;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    color: inherit;
+    font-size: 15px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  }
+  .track:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+  .track:active {
+    transform: scale(0.98);
+  }
+  .track.active {
+    background: rgba(120, 115, 245, 0.18);
+    border-color: rgba(120, 115, 245, 0.5);
+  }
+  .track-icon {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #ff6ec4, #7873f5 50%, #4adede);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+  }
+  .track-name {
+    flex: 1;
+    font-weight: 500;
+  }
+  .track-status {
+    font-size: 12px;
+    color: rgba(245, 245, 247, 0.45);
+    min-width: 46px;
+    text-align: right;
   }
   audio {
     width: 100%;
     accent-color: #7873f5;
   }
   .hint {
-    margin-top: 18px;
+    margin-top: 14px;
+    text-align: center;
     font-size: 12px;
     color: rgba(245, 245, 247, 0.45);
   }
@@ -72,26 +129,68 @@
 </head>
 <body>
   <div class="card">
-    <div class="art" id="art">🎵</div>
-    <h1 id="track-title">Custom Track</h1>
-    <p class="subtitle" id="track-subtitle">Scanned via QR code</p>
-    <audio id="player" controls preload="auto" src="audio/song.mp3">
+    <div class="header">
+      <div class="art" id="art">🎵</div>
+      <h1>Pick a Track</h1>
+      <p class="subtitle">Tap one to play it</p>
+    </div>
+
+    <div class="track-list" id="track-list"></div>
+
+    <audio id="player" controls preload="none">
       Your browser does not support the audio element.
     </audio>
-    <p class="hint">Tap play if audio doesn't start automatically</p>
+    <p class="hint">Placeholder tracks — swap the MP3s in <code>audio/</code> anytime</p>
   </div>
 
   <script>
-    const audio = document.getElementById('player');
+    // Placeholder playlist. Replace each `src` with your real MP3 filename
+    // once uploaded (see README.md for instructions).
+    const tracks = [
+      { title: 'Track 1', src: 'audio/track1.mp3', icon: '1' },
+      { title: 'Track 2', src: 'audio/track2.mp3', icon: '2' },
+      { title: 'Track 3', src: 'audio/track3.mp3', icon: '3' },
+      { title: 'Track 4', src: 'audio/track4.mp3', icon: '4' },
+    ];
+
+    const listEl = document.getElementById('track-list');
+    const player = document.getElementById('player');
     const art = document.getElementById('art');
+    let activeIndex = null;
 
-    audio.addEventListener('play', () => art.classList.add('playing'));
-    audio.addEventListener('pause', () => art.classList.remove('playing'));
+    function render() {
+      listEl.innerHTML = '';
+      tracks.forEach((track, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'track' + (i === activeIndex ? ' active' : '');
+        btn.innerHTML = `
+          <span class="track-icon">${track.icon}</span>
+          <span class="track-name">${track.title}</span>
+          <span class="track-status">${i === activeIndex && !player.paused ? 'Playing' : ''}</span>
+        `;
+        btn.addEventListener('click', () => selectTrack(i));
+        listEl.appendChild(btn);
+      });
+    }
 
-    // Best-effort autoplay; browsers may block this until user interacts.
-    audio.play().catch(() => {
-      /* Autoplay blocked — user will tap the play button. */
-    });
+    function selectTrack(i) {
+      if (activeIndex === i) {
+        player.paused ? player.play() : player.pause();
+        return;
+      }
+      activeIndex = i;
+      player.src = tracks[i].src;
+      player.play().catch(() => {
+        /* Autoplay blocked — user can tap the native controls instead. */
+      });
+      render();
+    }
+
+    player.addEventListener('play', () => { art.classList.add('playing'); render(); });
+    player.addEventListener('pause', () => { art.classList.remove('playing'); render(); });
+    player.addEventListener('ended', () => { art.classList.remove('playing'); render(); });
+
+    render();
   </script>
 </body>
 </html>

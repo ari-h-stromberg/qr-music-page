@@ -1,15 +1,15 @@
 # QR Music Page
 
-A minimal static page that autoplays a custom MP3 when opened — meant to be scanned via a printed QR code.
+A minimal static page listing 4 tappable tracks — meant to be scanned via a printed QR code, letting whoever scans it pick a song to play.
 
 ## How it works
 
-- `index.html` — the page with the audio player
-- `audio/song.mp3` — the track that gets played (add your own file here)
+- `index.html` — the page with the track list and player
+- `audio/track1.mp3` … `audio/track4.mp3` — the four tracks (currently placeholders; add your own files here)
 
-## Updating the track
+## Updating the tracks
 
-1. Replace `audio/song.mp3` with your MP3 (keep the same filename, or update the `src` in `index.html`)
+1. Add your 4 MP3 files to the `audio/` folder, named `track1.mp3` through `track4.mp3` (or update the `src` values and titles in the `tracks` array near the bottom of `index.html` if you want different filenames/names)
 2. Commit and push — GitHub Pages redeploys automatically within a minute or two
 
 ## Hosting
