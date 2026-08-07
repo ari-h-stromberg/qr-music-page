@@ -62,6 +62,23 @@
     color: rgba(245, 245, 247, 0.6);
     font-size: 14px;
   }
+  .instructions {
+    margin: 0 0 20px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 110, 196, 0.35);
+    background: rgba(255, 110, 196, 0.1);
+    text-align: center;
+    font-size: 15px;
+    line-height: 1.5;
+    color: rgba(245, 245, 247, 0.9);
+  }
+  .instructions strong {
+    display: block;
+    margin-top: 4px;
+    color: #ffb3e0;
+    font-weight: 600;
+  }
   .track-list {
     display: flex;
     flex-direction: column;
@@ -134,6 +151,11 @@
       <h1>Pick a Track</h1>
       <p class="subtitle">Tap one to play it</p>
     </div>
+
+    <p class="instructions">
+      Listen to each of these tracks to solve the puzzle,
+      <strong>be sure to listen all the way to the end!</strong>
+    </p>
 
     <div class="track-list" id="track-list"></div>
 
