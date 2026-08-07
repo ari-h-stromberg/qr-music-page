@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Now Playing</title>
+<style>
+  :root {
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: radial-gradient(circle at top, #2b1055 0%, #0a0a1a 65%, #050510 100%);
+    color: #f5f5f7;
+    padding: 24px;
+  }
+  .card {
+    width: 100%;
+    max-width: 420px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(16px);
+    border-radius: 24px;
+    padding: 32px 28px 28px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  }
+  .art {
+    width: 180px;
+    height: 180px;
+    margin: 0 auto 24px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #ff6ec4, #7873f5 50%, #4adede);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 64px;
+    box-shadow: 0 12px 30px rgba(120, 115, 245, 0.4);
+    animation: spin 12s linear infinite paused;
+  }
+  .art.playing { animation-play-state: running; }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  h1 {
+    font-size: 20px;
+    margin: 0 0 4px;
+    font-weight: 600;
+  }
+  p.subtitle {
+    margin: 0 0 24px;
+    color: rgba(245, 245, 247, 0.6);
+    font-size: 14px;
+  }
+  audio {
+    width: 100%;
+    accent-color: #7873f5;
+  }
+  .hint {
+    margin-top: 18px;
+    font-size: 12px;
+    color: rgba(245, 245, 247, 0.45);
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="art" id="art">🎵</div>
+    <h1 id="track-title">Custom Track</h1>
+    <p class="subtitle" id="track-subtitle">Scanned via QR code</p>
+    <audio id="player" controls preload="auto" src="audio/song.mp3">
+      Your browser does not support the audio element.
+    </audio>
+    <p class="hint">Tap play if audio doesn't start automatically</p>
+  </div>
+
+  <script>
+    const audio = document.getElementById('player');
+    const art = document.getElementById('art');
+
+    audio.addEventListener('play', () => art.classList.add('playing'));
+    audio.addEventListener('pause', () => art.classList.remove('playing'));
+
+    // Best-effort autoplay; browsers may block this until user interacts.
+    audio.play().catch(() => {
+      /* Autoplay blocked — user will tap the play button. */
+    });
+  </script>
+</body>
+</html>
