@@ -40,7 +40,9 @@ The originals live in Dropbox under `Escape Room/photoSlide` and are full-resolu
 python3 tools/build-photos.py
 ```
 
-That downscales everything to 1200px, strips metadata (including any GPS tags), rewrites `photos/photos.json`, and removes images no longer in the source folder. The current set went from 183 MB of originals down to 4.5 MB.
+That downscales everything to 1200px, strips metadata (including any GPS tags), rewrites `photos/photos.json`, and removes images no longer in the source folder. The current set is 96 photos, down from 444 MB of originals to 15 MB.
+
+The manifest is ordered oldest photo first, using each file's EXIF capture date and falling back to its file timestamp, so the slideshow plays chronologically.
 
 The page fetches only the next photo in sequence rather than all of them at once, so a phone on cellular isn't asked to download the whole set up front.
 

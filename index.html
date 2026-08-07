@@ -369,6 +369,14 @@
       }
     }
 
+    // Roll straight into the next track so the four numbers can be collected
+    // in one sitting. Stops after the last one rather than looping.
+    player.addEventListener('ended', () => {
+      if (activeIndex !== null && activeIndex + 1 < tracks.length) {
+        selectTrack(activeIndex + 1);
+      }
+    });
+
     player.addEventListener('play', render);
     player.addEventListener('pause', render);
     player.addEventListener('ended', render);
