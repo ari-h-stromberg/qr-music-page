@@ -70,6 +70,36 @@
     pointer-events: none;
     background: linear-gradient(to bottom, rgba(5, 5, 16, 0), rgba(5, 5, 16, 0.85));
   }
+
+  .reveal {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(140px, 42vw, 300px);
+    font-weight: 800;
+    line-height: 1;
+    color: #fff;
+    text-shadow: 0 0 60px rgba(0, 0, 0, 0.95), 0 0 24px rgba(0, 0, 0, 0.9);
+    background: rgba(5, 5, 16, 0.55);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    animation: reveal-pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes reveal-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal.visible { animation: none; }
+  }
   @media (prefers-reduced-motion: reduce) {
     .slide { transition: none; }
   }
@@ -183,6 +213,7 @@
   <div class="slideshow" id="slideshow">
     <div class="slide"><div class="slide-bg"></div><img class="slide-img" alt="" /></div>
     <div class="slide"><div class="slide-bg"></div><img class="slide-img" alt="" /></div>
+    <div class="reveal" id="reveal" aria-live="polite"></div>
   </div>
 
   <div class="panel">
@@ -200,14 +231,18 @@
 
   <script>
     const tracks = [
-      { title: 'Track X', src: 'audio/track1.mp3', icon: 'X' },
-      { title: 'Track Y', src: 'audio/track2.mp3', icon: 'Y' },
-      { title: 'Track Z', src: 'audio/track3.mp3', icon: 'Z' },
-      { title: 'Track Q', src: 'audio/track4.mp3', icon: 'Q' },
+      { title: 'Track X', src: 'audio/track1.mp3', icon: 'X', reveal: '2' },
+      { title: 'Track Y', src: 'audio/track2.mp3', icon: 'Y', reveal: '1' },
+      { title: 'Track Z', src: 'audio/track3.mp3', icon: 'Z', reveal: '0' },
+      { title: 'Track Q', src: 'audio/track4.mp3', icon: 'Q', reveal: '7' },
     ];
+
+    // How long before a track ends its number appears.
+    const REVEAL_LEAD_S = 5;
 
     const listEl = document.getElementById('track-list');
     const player = document.getElementById('player');
+    const revealEl = document.getElementById('reveal');
     let activeIndex = null;
 
     function render() {
@@ -231,6 +266,7 @@
         return;
       }
       activeIndex = i;
+      hideReveal();
       player.src = tracks[i].src;
       player.play().catch(() => {
         /* Autoplay blocked — user can tap the native controls instead. */
@@ -238,9 +274,32 @@
       render();
     }
 
+    function hideReveal() {
+      revealEl.classList.remove('visible');
+    }
+
+    // The number stays up once the track finishes, so nobody misses it by
+    // glancing away right at the end.
+    function updateReveal() {
+      const track = tracks[activeIndex];
+      if (!track || !isFinite(player.duration)) {
+        hideReveal();
+        return;
+      }
+      if (player.duration - player.currentTime <= REVEAL_LEAD_S) {
+        if (revealEl.textContent !== track.reveal) revealEl.textContent = track.reveal;
+        revealEl.classList.add('visible');
+      } else {
+        hideReveal();
+      }
+    }
+
     player.addEventListener('play', render);
     player.addEventListener('pause', render);
     player.addEventListener('ended', render);
+    player.addEventListener('timeupdate', updateReveal);
+    player.addEventListener('ended', updateReveal);
+    player.addEventListener('seeked', updateReveal);
 
     render();
 
