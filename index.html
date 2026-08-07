@@ -34,23 +34,42 @@
     text-align: center;
     margin-bottom: 24px;
   }
-  .art {
-    width: 100px;
-    height: 100px;
+  .slideshow {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
     margin: 0 auto 16px;
-    border-radius: 20px;
-    background: linear-gradient(135deg, #ff6ec4, #7873f5 50%, #4adede);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 40px;
-    box-shadow: 0 12px 30px rgba(120, 115, 245, 0.4);
-    animation: spin 12s linear infinite paused;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #12102a;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
   }
-  .art.playing { animation-play-state: running; }
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+  .slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 1.1s ease-in-out;
+  }
+  .slide.visible { opacity: 1; }
+  /* Photos are a mix of portrait and landscape. The blurred, cropped copy fills
+     the frame so the contained photo above it never sits on empty letterboxing. */
+  .slide-bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    filter: blur(18px) brightness(0.5);
+    transform: scale(1.15);
+  }
+  .slide-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .slide { transition: none; }
   }
   h1 {
     font-size: 20px;
@@ -147,7 +166,10 @@
 <body>
   <div class="card">
     <div class="header">
-      <div class="art" id="art">🎵</div>
+      <div class="slideshow" id="slideshow">
+        <div class="slide"><div class="slide-bg"></div><img class="slide-img" alt="" /></div>
+        <div class="slide"><div class="slide-bg"></div><img class="slide-img" alt="" /></div>
+      </div>
       <h1>Pick a Track</h1>
       <p class="subtitle">Tap one to play it</p>
     </div>
@@ -175,7 +197,6 @@
 
     const listEl = document.getElementById('track-list');
     const player = document.getElementById('player');
-    const art = document.getElementById('art');
     let activeIndex = null;
 
     function render() {
@@ -206,11 +227,69 @@
       render();
     }
 
-    player.addEventListener('play', () => { art.classList.add('playing'); render(); });
-    player.addEventListener('pause', () => { art.classList.remove('playing'); render(); });
-    player.addEventListener('ended', () => { art.classList.remove('playing'); render(); });
+    player.addEventListener('play', render);
+    player.addEventListener('pause', render);
+    player.addEventListener('ended', render);
 
     render();
+
+    const SLIDE_MS = 5000;
+    const slides = [...document.querySelectorAll('#slideshow .slide')];
+    let slot = 0;
+
+    function paint(slideEl, src) {
+      slideEl.querySelector('.slide-img').src = src;
+      slideEl.querySelector('.slide-bg').style.backgroundImage = `url("${src}")`;
+    }
+
+    function load(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = src;
+      });
+    }
+
+    async function startSlideshow() {
+      let photos;
+      try {
+        photos = await (await fetch('photos/photos.json')).json();
+      } catch {
+        return; // Leave the frame empty rather than breaking the track list.
+      }
+      if (!photos.length) return;
+
+      const srcOf = (i) => `photos/${photos[i % photos.length]}`;
+
+      await load(srcOf(0));
+      paint(slides[0], srcOf(0));
+      slides[0].classList.add('visible');
+
+      if (photos.length === 1) return;
+
+      // Only ever fetch the next photo, so a phone on cellular isn't asked to
+      // download all of them up front.
+      let next = 1;
+      while (true) {
+        const src = srcOf(next);
+        try {
+          await load(src);
+        } catch {
+          next++;
+          continue;
+        }
+        await new Promise((r) => setTimeout(r, SLIDE_MS));
+        const incoming = slides[1 - slot];
+        paint(incoming, src);
+        incoming.classList.add('visible');
+        slides[slot].classList.remove('visible');
+        slot = 1 - slot;
+        next++;
+      }
+    }
+
+    startSlideshow();
   </script>
 </body>
 </html>

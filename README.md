@@ -4,8 +4,9 @@ A minimal static page listing 4 tappable tracks — meant to be scanned via a pr
 
 ## How it works
 
-- `index.html` — the page with the track list and player
+- `index.html` — the page with the photo slideshow, track list, and player
 - `audio/track1.mp3` … `audio/track4.mp3` — the four tracks
+- `photos/` — web-sized slideshow images plus `photos.json`, the manifest the page reads
 
 Current mapping (display name → source file):
 
@@ -30,6 +31,18 @@ Served via [GitHub Pages](https://pages.github.com/) at **https://can-lizzy-esca
 The domain is registered at Cloudflare, which also hosts its DNS. The apex points at GitHub Pages with `A` records (185.199.108–111.153) and `AAAA` records (2606:50c0:8000–8003::153). These must stay **DNS only** (grey cloud) in Cloudflare — proxying them breaks the TLS handshake with GitHub.
 
 The old `ari-h-stromberg.github.io/qr-music-page` address still works and 301-redirects here.
+
+## Updating the slideshow photos
+
+The originals live in Dropbox under `Escape Room/photoSlide` and are full-resolution camera JPEGs — far too heavy to serve to a phone. Add or remove photos there, then run:
+
+```bash
+python3 tools/build-photos.py
+```
+
+That downscales everything to 1200px, strips metadata (including any GPS tags), rewrites `photos/photos.json`, and removes images no longer in the source folder. The current set went from 183 MB of originals down to 4.5 MB.
+
+The page fetches only the next photo in sequence rather than all of them at once, so a phone on cellular isn't asked to download the whole set up front.
 
 ## QR code
 
