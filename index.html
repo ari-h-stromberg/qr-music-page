@@ -71,10 +71,37 @@
     background: linear-gradient(to bottom, rgba(5, 5, 16, 0), rgba(5, 5, 16, 0.85));
   }
 
-  .reveal {
+  .tease {
     position: absolute;
     inset: 0;
     z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(30px, 9vw, 60px);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: #fff;
+    text-shadow: 0 0 40px rgba(0, 0, 0, 0.95), 0 0 16px rgba(0, 0, 0, 0.9);
+    background: rgba(5, 5, 16, 0.5);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+  .tease.visible {
+    opacity: 1;
+    animation: tease-breathe 1.4s ease-in-out infinite;
+  }
+  @keyframes tease-breathe {
+    0%, 100% { transform: scale(1); opacity: 0.85; }
+    50% { transform: scale(1.04); opacity: 1; }
+  }
+
+  .reveal {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -98,7 +125,7 @@
     50% { transform: scale(1.06); }
   }
   @media (prefers-reduced-motion: reduce) {
-    .reveal.visible { animation: none; }
+    .reveal.visible, .tease.visible { animation: none; }
   }
   @media (prefers-reduced-motion: reduce) {
     .slide { transition: none; }
@@ -240,6 +267,7 @@
   <div class="slideshow" id="slideshow">
     <div class="slide"><div class="slide-bg"></div><img class="slide-img" alt="" /></div>
     <div class="slide"><div class="slide-bg"></div><img class="slide-img" alt="" /></div>
+    <div class="tease" id="tease">Wait for it...</div>
     <div class="reveal" id="reveal" aria-live="polite"></div>
   </div>
 
@@ -272,13 +300,19 @@
       { title: 'Track Q', src: 'audio/track4.mp3', icon: 'Q', reveal: '7' },
     ];
 
-    // The number is on screen between these two points before a track ends.
+    // Countdown to the end of a track, in seconds remaining:
+    //   8.0 - 5.5  "Wait for it..."
+    //   5.5 - 5.0  a beat of nothing
+    //   5.0 - 1.0  the number
+    const TEASE_LEAD_S = 8;
+    const TEASE_HIDE_S = 5.5;
     const REVEAL_LEAD_S = 5;
     const REVEAL_HIDE_S = 1;
 
     const listEl = document.getElementById('track-list');
     const player = document.getElementById('player');
     const revealEl = document.getElementById('reveal');
+    const teaseEl = document.getElementById('tease');
     const progressEl = document.getElementById('progress');
     const progressFill = document.getElementById('progress-fill');
     const timeElapsed = document.getElementById('time-elapsed');
@@ -319,6 +353,7 @@
 
     function hideReveal() {
       revealEl.classList.remove('visible');
+      teaseEl.classList.remove('visible');
     }
 
     function updateReveal() {
@@ -328,11 +363,17 @@
         return;
       }
       const remaining = player.duration - player.currentTime;
+
+      teaseEl.classList.toggle(
+        'visible',
+        remaining <= TEASE_LEAD_S && remaining > TEASE_HIDE_S
+      );
+
       if (remaining <= REVEAL_LEAD_S && remaining > REVEAL_HIDE_S) {
         if (revealEl.textContent !== track.reveal) revealEl.textContent = track.reveal;
         revealEl.classList.add('visible');
       } else {
-        hideReveal();
+        revealEl.classList.remove('visible');
       }
     }
 
