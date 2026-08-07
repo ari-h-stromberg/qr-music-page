@@ -5,11 +5,22 @@ A minimal static page listing 4 tappable tracks — meant to be scanned via a pr
 ## How it works
 
 - `index.html` — the page with the track list and player
-- `audio/track1.mp3` … `audio/track4.mp3` — the four tracks (currently placeholders; add your own files here)
+- `audio/track1.mp3` … `audio/track4.mp3` — the four tracks
+
+Current mapping (display name → source file):
+
+| On the page | File | Original |
+| --- | --- | --- |
+| Track X | `audio/track1.mp3` | 01 Lightning Bolt |
+| Track Y | `audio/track2.mp3` | 03 All My Love |
+| Track Z | `audio/track3.mp3` | 03 Skinny Love |
+| Track Q | `audio/track4.mp3` | 26 The Prophecy |
+
+Sources were `.m4a` (AAC), transcoded to 128 kbps MP3 to keep downloads fast over cellular.
 
 ## Updating the tracks
 
-1. Add your 4 MP3 files to the `audio/` folder, named `track1.mp3` through `track4.mp3` (or update the `src` values and titles in the `tracks` array near the bottom of `index.html` if you want different filenames/names)
+1. Replace the files in `audio/`, keeping the `track1.mp3` … `track4.mp3` names (or update the `src` values and titles in the `tracks` array near the bottom of `index.html`)
 2. Commit and push — GitHub Pages redeploys automatically within a minute or two
 
 ## Hosting
