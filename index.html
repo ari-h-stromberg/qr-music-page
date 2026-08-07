@@ -183,11 +183,31 @@
     text-align: right;
   }
 
-  audio {
-    width: 100%;
-    height: 32px;
+  .progress {
     margin-top: 2px;
-    accent-color: #7873f5;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  .progress.active { opacity: 1; }
+  .progress-track {
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #ff6ec4, #7873f5);
+  }
+  .progress-times {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: rgba(245, 245, 247, 0.5);
   }
 
   /* Shorter phones: tighten the panel so its contents still fit inside the
@@ -205,7 +225,14 @@
     .track-list { gap: 4px; }
     .track { padding: 6px 10px; }
     .track-icon { width: 22px; height: 22px; }
-    audio { height: 28px; }
+  }
+  @media (max-height: 600px) {
+    .panel { gap: 4px; padding: 6px 12px calc(6px + env(safe-area-inset-bottom)); }
+    .instructions { font-size: 10px; padding: 5px 8px; }
+    .track-list { gap: 3px; }
+    .track { padding: 5px 9px; font-size: 12px; }
+    .track-icon { width: 20px; height: 20px; font-size: 11px; }
+    .progress-times { font-size: 10px; margin-top: 3px; }
   }
 </style>
 </head>
@@ -224,9 +251,17 @@
 
     <div class="track-list" id="track-list"></div>
 
-    <audio id="player" controls preload="none">
-      Your browser does not support the audio element.
-    </audio>
+    <!-- No native controls: the scrub bar would let players skip straight to
+         the number instead of listening. Playback is driven by the buttons
+         above, and this read-only bar just shows progress. -->
+    <audio id="player" preload="none"></audio>
+    <div class="progress" id="progress">
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-times">
+        <span id="time-elapsed">0:00</span>
+        <span id="time-total">0:00</span>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -237,13 +272,19 @@
       { title: 'Track Q', src: 'audio/track4.mp3', icon: 'Q', reveal: '7' },
     ];
 
-    // How long before a track ends its number appears.
+    // The number is on screen between these two points before a track ends.
     const REVEAL_LEAD_S = 5;
+    const REVEAL_HIDE_S = 1;
 
     const listEl = document.getElementById('track-list');
     const player = document.getElementById('player');
     const revealEl = document.getElementById('reveal');
+    const progressEl = document.getElementById('progress');
+    const progressFill = document.getElementById('progress-fill');
+    const timeElapsed = document.getElementById('time-elapsed');
+    const timeTotal = document.getElementById('time-total');
     let activeIndex = null;
+    let furthestPlayed = 0;
 
     function render() {
       listEl.innerHTML = '';
@@ -266,10 +307,12 @@
         return;
       }
       activeIndex = i;
+      furthestPlayed = 0;
       hideReveal();
       player.src = tracks[i].src;
+      progressEl.classList.add('active');
       player.play().catch(() => {
-        /* Autoplay blocked — user can tap the native controls instead. */
+        /* Autoplay blocked — tapping the track again starts it. */
       });
       render();
     }
@@ -278,15 +321,14 @@
       revealEl.classList.remove('visible');
     }
 
-    // The number stays up once the track finishes, so nobody misses it by
-    // glancing away right at the end.
     function updateReveal() {
       const track = tracks[activeIndex];
       if (!track || !isFinite(player.duration)) {
         hideReveal();
         return;
       }
-      if (player.duration - player.currentTime <= REVEAL_LEAD_S) {
+      const remaining = player.duration - player.currentTime;
+      if (remaining <= REVEAL_LEAD_S && remaining > REVEAL_HIDE_S) {
         if (revealEl.textContent !== track.reveal) revealEl.textContent = track.reveal;
         revealEl.classList.add('visible');
       } else {
@@ -294,10 +336,45 @@
       }
     }
 
+    function fmt(s) {
+      if (!isFinite(s)) return '0:00';
+      return Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+    }
+
+    function updateProgress() {
+      const d = player.duration;
+      if (!isFinite(d) || d <= 0) return;
+      progressFill.style.width = (player.currentTime / d) * 100 + '%';
+      timeElapsed.textContent = fmt(player.currentTime);
+      timeTotal.textContent = fmt(d);
+    }
+
+    // Hiding the native controls stops the obvious skip, but a phone's lock
+    // screen or headphone controls can still seek. Snapping any forward jump
+    // back to the furthest point actually heard keeps the number earned.
+    player.addEventListener('timeupdate', () => {
+      if (!player.seeking) furthestPlayed = Math.max(furthestPlayed, player.currentTime);
+    });
+    player.addEventListener('seeking', () => {
+      if (player.currentTime > furthestPlayed + 1.5) player.currentTime = furthestPlayed;
+    });
+
+    if ('mediaSession' in navigator) {
+      for (const action of ['seekto', 'seekforward', 'seekbackward', 'nexttrack', 'previoustrack']) {
+        try {
+          navigator.mediaSession.setActionHandler(action, () => {});
+        } catch {
+          /* Action unsupported in this browser. */
+        }
+      }
+    }
+
     player.addEventListener('play', render);
     player.addEventListener('pause', render);
     player.addEventListener('ended', render);
     player.addEventListener('timeupdate', updateReveal);
+    player.addEventListener('timeupdate', updateProgress);
+    player.addEventListener('loadedmetadata', updateProgress);
     player.addEventListener('ended', updateReveal);
     player.addEventListener('seeked', updateReveal);
 
